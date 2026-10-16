@@ -99,7 +99,119 @@ td.l,th.l{text-align:left;white-space:normal}
 #tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12px;padding:5px 8px;border-radius:6px;z-index:20;max-width:240px}
 footer{color:var(--muted);font-size:13px;margin-top:8px;max-width:70ch}
 @media (max-width:520px){.full,.hide-s{display:none}.barwrap{width:36px}td,th{padding-inline:5px}}
-@media (prefers-reduced-motion:no-preference){.bar{transition:width .25s}}
+  /* Animations & Modern Telemetry Polish */
+  @keyframes fadeInSlide {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pulseDot {
+    0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(63, 197, 139, 0.7); }
+    70% { transform: scale(1.1); box-shadow: 0 0 0 6px rgba(63, 197, 139, 0); }
+    100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(63, 197, 139, 0); }
+  }
+  @keyframes barShimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  [role="tabpanel"]:not([hidden]) {
+    animation: fadeInSlide 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .pulse-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    background: var(--good);
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: 1px;
+    animation: pulseDot 2s infinite;
+  }
+
+  /* Shimmering and smoothly extending probability bars */
+  .bar {
+    height: 8px;
+    border-radius: 0 4px 4px 0;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 70%, #000) 0%, var(--accent) 100%);
+    min-width: 1px;
+    flex: none;
+    position: relative;
+    overflow: hidden;
+    transition: width 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+  }
+  .bar::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+    animation: barShimmer 2.8s infinite;
+  }
+
+  /* Interactive card and row hover effects */
+  section.card {
+    transition: box-shadow 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+  }
+  section.card:hover {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+    border-color: color-mix(in srgb, var(--line) 70%, var(--accent));
+  }
+
+  tbody tr {
+    transition: background-color 0.15s ease;
+  }
+  tbody tr:hover {
+    background-color: color-mix(in srgb, var(--accent) 6%, var(--surface));
+  }
+  tbody tr:hover .stripe {
+    transform: scaleY(1.18);
+    transition: transform 0.15s ease;
+  }
+  tbody tr:hover .abbr {
+    color: var(--accent);
+    transition: color 0.15s ease;
+  }
+
+  /* Interactive heatmap cell scaling on hover */
+  .heat div:not(.h):not(.rowlab) {
+    transition: transform 0.16s ease, filter 0.16s ease, box-shadow 0.16s ease;
+    cursor: default;
+  }
+  .heat div:not(.h):not(.rowlab):hover {
+    transform: scale(1.18);
+    z-index: 5;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+    filter: brightness(1.15);
+  }
+
+  /* Interactive tactile buttons */
+  .btn, .mv, select {
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .btn:hover, .mv:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+  }
+  .btn:active, .mv:active {
+    transform: translateY(1px);
+    box-shadow: none;
+  }
+
+  .chip {
+    transition: transform 0.2s ease, border-color 0.2s ease;
+  }
+  .chip:hover {
+    transform: translateY(-1px);
+    border-color: var(--accent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 </style>
 
 <div class="wrap">
@@ -293,7 +405,7 @@ const barCell = (p, max) => `<div class="barcell"><span class="barwrap"><span cl
 
   $("chips").innerHTML = `<span class="chip"><b>Next race</b> ${esc(DATA.next_race.name)} (${esc(DATA.next_race.place || "")}) &bull; ${esc(dateStr)}${countdown}</span>
     <span class="chip"><b>Trained on</b> ${DATA.trained_through.n_races} races (up to ${esc(DATA.trained_through.race)})</span>
-    <span class="chip" style="color:var(--good);border-color:color-mix(in srgb,var(--good) 40%,var(--line))"><b>&#9679; Live Pipeline</b> Auto-synced weekly (${esc(updatedStr)})</span>`;
+    <span class="chip" style="color:var(--good);border-color:color-mix(in srgb,var(--good) 40%,var(--line))"><span class="pulse-dot"></span><b>Live Pipeline</b> Auto-synced weekly (${esc(updatedStr)})</span>`;
 
 $("fsub").textContent = `The forecast for the ${DATA.next_race.name} before anyone has qualified. It uses each team's form this season and each driver's record against his own teammate.`;
 
