@@ -1,0 +1,360 @@
+﻿<title>Grid Odds</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one column, a sticky tab bar, and four panels. Tables and the grid heatmap scroll inside their own boxes. */
+:root{
+  --bg:#eef1f4; --surface:#fcfcfb; --ink:#14181d; --muted:#5b6470; --line:#d9dee4; --soft:#f2f4f6;
+  --accent:#2a78d6; --accent2:#eb6834; --good:#0d7a4f; --warn:#a15c00;
+  --display:"Barlow Condensed","Arial Narrow",sans-serif; --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#111417; --surface:#1a1d21; --ink:#eceef1; --muted:#a0a9b4; --line:#2c3238; --soft:#21252a;
+  --accent:#3987e5; --accent2:#d95926; --good:#3fc58b; --warn:#e0a13a; color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#111417; --surface:#1a1d21; --ink:#eceef1; --muted:#a0a9b4; --line:#2c3238; --soft:#21252a;
+  --accent:#3987e5; --accent2:#d95926; --good:#3fc58b; --warn:#e0a13a; color-scheme:dark;}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--body);margin:0;
+  padding-block:0 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1040px;margin:0 auto}
+header{padding:28px 0 16px}
+.eyebrow{font:600 12px/1 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+h1{font:700 clamp(40px,8vw,64px)/.95 var(--display);margin:8px 0 10px;letter-spacing:.005em}
+.lede{color:var(--muted);max-width:62ch;margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.chip{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:13px}
+.chip b{font-weight:600}
+nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);display:flex;gap:4px;overflow-x:auto;margin-bottom:20px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+nav button{font:600 15px var(--body);background:none;border:0;border-bottom:3px solid transparent;color:var(--muted);padding:12px 14px;cursor:pointer;white-space:nowrap}
+nav button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+nav button:hover{color:var(--ink)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h2{font:700 28px/1.1 var(--display);margin:0 0 4px}
+h3{font:600 17px/1.2 var(--body);margin:0 0 6px}
+.sub{color:var(--muted);margin:0 0 14px;max-width:68ch}
+section.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:20px;min-width:0}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th{font:600 11px/1.2 var(--body);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);text-align:right;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+.drv{display:flex;align-items:center;gap:8px;text-align:left}
+.stripe{width:4px;height:22px;border-radius:2px;flex:none}
+.abbr{font:700 19px/1 var(--display);letter-spacing:.03em;width:44px;flex:none}
+.full{color:var(--muted);font-size:13px;overflow:hidden;text-overflow:ellipsis}
+.barcell{display:flex;align-items:center;gap:8px;justify-content:flex-end}
+.bar{height:8px;border-radius:0 4px 4px 0;background:var(--accent);min-width:1px;flex:none}
+.barwrap{width:90px;display:flex;justify-content:flex-start}
+.pct{min-width:44px;text-align:right}
+.strong{font-weight:600}
+.hint{font-size:13px;color:var(--muted)}
+.heat{display:grid;gap:2px;min-width:640px;font-variant-numeric:tabular-nums}
+.heat div{height:26px;display:flex;align-items:center;justify-content:center;font-size:11px;border-radius:2px;background:var(--soft)}
+.heat .h{background:none;color:var(--muted);font-weight:600;font-size:11px;height:20px}
+.heat .rowlab{justify-content:flex-start;gap:6px;background:none;font:700 17px var(--display);letter-spacing:.03em;position:sticky;left:0;z-index:1;background:var(--surface)}
+.heat .rowlab i{width:4px;height:18px;border-radius:2px;display:block;flex:none}
+.two{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:760px){.two{grid-template-columns:minmax(0,1fr)}}
+.slots{display:grid;gap:4px}
+.slot{display:grid;grid-template-columns:30px minmax(0,1fr) 30px 30px;gap:6px;align-items:center}
+.slot .n{font:700 18px var(--display);color:var(--muted);text-align:right}
+select{font:500 14px var(--body);background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:6px 8px;min-width:0;width:100%}
+.mv{font:600 14px var(--body);background:var(--soft);color:var(--ink);border:1px solid var(--line);border-radius:6px;height:32px;cursor:pointer}
+.mv:hover{border-color:var(--accent)}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+.btn{font:600 13px var(--body);background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:7px 12px;cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.delta{font-size:12px}
+.up{color:var(--good)} .down{color:var(--warn)}
+.callout{background:var(--soft);border-radius:8px;padding:12px 14px;margin:0 0 14px}
+.callout b{font-weight:600}
+.pill{display:inline-block;min-width:30px;text-align:center;border-radius:999px;font-weight:600;font-size:12px;padding:2px 8px;background:var(--soft)}
+.pill.p1{background:var(--accent);color:#fff}
+.pill.pod{background:color-mix(in srgb,var(--accent) 25%,var(--surface))}
+.pill.out{color:var(--muted)}
+.controls{display:flex;flex-wrap:wrap;gap:12px;align-items:end;margin-bottom:14px}
+.controls label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:3px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{font:600 13px var(--body);background:var(--surface);color:var(--muted);border:0;padding:8px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#fff}
+.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.charts svg{width:100%;height:auto;display:block}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;margin-bottom:10px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+ul.plain{margin:0;padding-left:18px} ul.plain li{margin:6px 0;max-width:72ch}
+.tag{font-size:12px;font-weight:600;border-radius:4px;padding:1px 6px}
+.tag.clear{background:color-mix(in srgb,var(--good) 18%,var(--surface));color:var(--good)}
+.tag.unclear{background:var(--soft);color:var(--muted)}
+.tag.worse{background:color-mix(in srgb,var(--warn) 18%,var(--surface));color:var(--warn)}
+td.l,th.l{text-align:left;white-space:normal}
+#tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12px;padding:5px 8px;border-radius:6px;z-index:20;max-width:240px}
+footer{color:var(--muted);font-size:13px;margin-top:8px;max-width:70ch}
+@media (max-width:520px){.full,.hide-s{display:none}.barwrap{width:36px}td,th{padding-inline:5px}}
+@media (prefers-reduced-motion:no-preference){.bar{transition:width .25s}}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Formula 1 race outcome predictor</div>
+  <h1>Grid Odds</h1>
+  <p class="lede">Chances of winning, reaching the podium and scoring points, worked out by replaying each race thousands of times. It was tested on 64 past races it had never seen, and the last tab shows how it did.</p>
+  <div class="chips" id="chips"></div>
+</header>
+
+<nav role="tablist" id="tabs">
+  <button role="tab" id="t-forecast" aria-selected="true" aria-controls="p-forecast">Forecast</button>
+  <button role="tab" id="t-grid" aria-selected="false" aria-controls="p-grid">Set the grid</button>
+  <button role="tab" id="t-past" aria-selected="false" aria-controls="p-past">Past races</button>
+  <button role="tab" id="t-trust" aria-selected="false" aria-controls="p-trust">How far to trust it</button>
+</nav>
+
+<main>
+<div id="p-forecast" role="tabpanel" aria-labelledby="t-forecast">
+  <h2>Forecast before qualifying</h2>
+  <p class="sub" id="fsub"></p>
+  <section class="card"><div class="scroll"><table id="odds"></table></div></section>
+  <section class="card">
+    <h3>Where each driver is likely to finish</h3>
+    <p class="sub">Each row adds up to 100%. Darker means more likely. The last column is a retirement or failure to start.</p>
+    <div class="scroll"><div class="heat" id="heat"></div></div>
+  </section>
+</div>
+
+<div id="p-grid" role="tabpanel" aria-labelledby="t-grid" hidden>
+  <h2>Set the grid</h2>
+  <p class="sub">Qualifying decides the starting order. Put the drivers in any order and the odds are recalculated for that grid.</p>
+  <div class="two">
+    <section class="card">
+      <div class="row">
+        <button class="btn" id="g-exp">Expected order</button>
+        <button class="btn" id="g-rev">Reverse</button>
+        <button class="btn" id="g-shuf">Shuffle</button>
+      </div>
+      <div class="slots" id="slots"></div>
+    </section>
+    <section class="card">
+      <div class="callout" id="gcall"></div>
+      <div class="scroll"><table id="godds"></table></div>
+      <p class="hint" style="margin:10px 0 0">Assumes no grid penalties, and that each driver's Q1 lap gap to the fastest car is typical for his starting slot. Change is measured against the forecast before qualifying.</p>
+    </section>
+  </div>
+</div>
+
+<div id="p-past" role="tabpanel" aria-labelledby="t-past" hidden>
+  <h2>Past races</h2>
+  <p class="sub">Every race from 2024 to Singapore 2026, predicted using only the races before it.</p>
+  <section class="card">
+    <div class="controls">
+      <div><label for="race">Race</label><select id="race"></select></div>
+      <div><label>Prediction made</label><div class="seg" id="stage"><button data-v="pre" aria-pressed="false">Before qualifying</button><button data-v="post" aria-pressed="true">After qualifying</button></div></div>
+    </div>
+    <div class="callout" id="pcall"></div>
+    <div class="scroll"><table id="ptable"></table></div>
+  </section>
+</div>
+
+<div id="p-trust" role="tabpanel" aria-labelledby="t-trust" hidden>
+  <h2>How far to trust it</h2>
+  <p class="sub" id="verdict"></p>
+  <section class="card"><h3>Scorecard on 64 unseen races</h3>
+    <p class="sub">Brier score is the average squared miss of the odds, so lower is better. A model that gave everyone equal chances scores 0.250 for the points places. The right-hand columns show how often the single best guess was right.</p>
+    <div class="scroll"><table id="scores"></table></div></section>
+  <section class="card"><h3>Is the model really better than the simple baselines?</h3>
+    <p class="sub">Each row compares two ways of predicting on the same 64 races. A negative number means the first one missed by less. "Clear" means the 90% range around the difference stays on one side of zero.</p>
+    <div class="scroll"><table id="diffs"></table></div></section>
+  <section class="card"><h3>When it says 30%, does it happen 30% of the time?</h3>
+    <div class="legend"><span><i style="background:var(--accent)"></i>After qualifying</span><span><i style="background:var(--accent2)"></i>Before qualifying</span><span><i style="background:none;border-top:2px dashed var(--muted);height:0;width:16px;border-radius:0;vertical-align:4px"></i>Perfect</span></div>
+    <div class="charts" id="cal"></div>
+    <p class="hint" id="dnfnote" style="margin-top:10px"></p></section>
+  <section class="card"><h3>What it cannot see</h3>
+    <ul class="plain">
+      <li>The track. The same driver form is used at every circuit, so a street-circuit specialist gets no credit.</li>
+      <li>Weather, safety cars, strategy calls and first-lap crashes, which is why a quarter of the field's results still surprise it.</li>
+      <li>Anything that changes between qualifying and the race, such as penalties after the grid is set or a car change.</li>
+      <li>The 2026 car rules are new. Last year's team form is deliberately ignored, so the first races of the year rest on very little data.</li>
+      <li>The driver line-up for the next race is assumed to match the last one.</li>
+    </ul></section>
+  <section class="card"><h3>How it is built</h3>
+    <ul class="plain">
+      <li>Every prediction uses only races that happened earlier. Before each test race the model was refitted from scratch. A test confirms a race's features ignore its own result.</li>
+      <li>Settings were chosen on the 2023 season only. 2024 onward was used once as the final exam.</li>
+      <li>Finishing position is predicted as a percentage of the field. Retirements are modelled separately. The race is then simulated 4,000 times with realistic random error to get the odds.</li>
+      <li>The what-if on the Set the grid tab runs the same simulation in your browser. It was checked against the Python version and agrees to within 0.4 percentage points.</li>
+    </ul></section>
+</div>
+</main>
+<footer>Built from public FastF1 timing data, 2022 to 2026. A learning and portfolio project, not betting advice.</footer>
+</div>
+<div id="tip" hidden></div>
+
+<script>/*ENGINE*/</script>
+<script>
+const DATA = /*DATA*/;
+const TRUST = /*TRUST*/;
+const TEAM = {"Red Bull Racing":"#3671C6","Ferrari":"#E8002D","Mercedes":"#00A39B","McLaren":"#FF8000","Alpine":"#FF87BC","RacingBulls":"#6692FF","Sauber":"#2DA44E","Haas F1 Team":"#8A8F94","Williams":"#1E9BE0","Aston Martin":"#229971","Cadillac":"#9C7B2E"};
+const tc = (t) => TEAM[t] || "#888";
+const $ = (id) => document.getElementById(id);
+const pct = (x, d = 1) => (x * 100).toFixed(x > 0 && x < 0.001 ? 2 : d) + "%";
+const pct0 = (x) => (x < 0.005 && x > 0 ? "<1%" : Math.round(x * 100) + "%");
+const N = DATA.n, D = DATA.drivers;
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const drvCell = (d) => `<div class="drv"><span class="stripe" style="background:${tc(d.team)}"></span><span class="abbr">${esc(d.abbr)}</span><span class="full">${esc(d.name)}</span></div>`;
+const barCell = (p, max) => `<div class="barcell"><span class="barwrap"><span class="bar" style="width:${Math.max(1, (p / max) * 100)}%"></span></span><span class="pct">${pct0(p)}</span></div>`;
+
+/* ---------- header */
+  /* ---------- header */
+  const raceDate = DATA.next_race.date ? new Date(DATA.next_race.date + "T14:00:00Z") : null;
+  const diffMs = raceDate ? raceDate - new Date() : -1;
+  let countdown = "";
+  if (diffMs > 0) {
+    const d = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const h = Math.floor((diffMs / (1000 * 60 * 60)) % 24);
+    countdown = ` &bull; Lights out in ${d}d ${h}h`;
+  }
+  const dateStr = raceDate ? raceDate.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) : (DATA.next_race.date || "");
+  const updatedStr = DATA.last_updated || "Live";
+
+  $("chips").innerHTML = `<span class="chip"><b>Next race</b> ${esc(DATA.next_race.name)} (${esc(DATA.next_race.place || "")}) &bull; ${esc(dateStr)}${countdown}</span>
+    <span class="chip"><b>Trained on</b> ${DATA.trained_through.n_races} races (up to ${esc(DATA.trained_through.race)})</span>
+    <span class="chip" style="color:var(--good);border-color:color-mix(in srgb,var(--good) 40%,var(--line))"><b>&#9679; Live Pipeline</b> Auto-synced weekly (${esc(updatedStr)})</span>`;
+
+$("fsub").textContent = `The forecast for the ${DATA.next_race.name} before anyone has qualified. It uses each team's form this season and each driver's record against his own teammate.`;
+
+/* ---------- forecast */
+function oddsTable(el, rows, base) {
+  const maxW = Math.max(...rows.map((r) => r.p_win)), maxP = Math.max(...rows.map((r) => r.p_podium)), maxT = 1;
+  el.innerHTML = `<thead><tr><th>Driver</th><th>Win</th><th>Podium</th><th>Points</th><th class="hide-s">Retire</th><th class="hide-s">Avg finish</th></tr></thead><tbody>` +
+    rows.map((r) => {
+      const b = base ? base[r.abbr] : null;
+      const dl = (k) => { if (!b) return ""; const x = r[k] - b[k]; if (Math.abs(x) < 0.005) return ""; return ` <span class="delta ${x > 0 ? "up" : "down"}">${x > 0 ? "+" : "−"}${Math.round(Math.abs(x) * 100)}</span>`; };
+      return `<tr><td>${drvCell(r)}</td><td>${barCell(r.p_win, maxW)}${dl("p_win") ? `<div class="hint">${dl("p_win")}</div>` : ""}</td><td>${barCell(r.p_podium, maxP)}</td><td>${barCell(r.p_top10, maxT)}</td><td class="hide-s">${pct0(r.p_dnf)}</td><td class="hide-s">${r.exp_pos == null ? "–" : r.exp_pos.toFixed(1)}</td></tr>`;
+    }).join("") + `</tbody>`;
+}
+oddsTable($("odds"), [...D].sort((a, b) => b.p_win - a.p_win));
+(function heat() {
+  const rows = [...D].sort((a, b) => a.exp_pos - b.exp_pos), el = $("heat");
+  el.style.gridTemplateColumns = `54px repeat(${N + 1}, minmax(24px,1fr))`;
+  let h = `<div class="h"></div>`;
+  for (let k = 1; k <= N; k++) h += `<div class="h">${k}</div>`;
+  h += `<div class="h">DNF</div>`;
+  for (const r of rows) {
+    h += `<div class="rowlab"><i style="background:${tc(r.team)}"></i>${esc(r.abbr)}</div>`;
+    const cells = [...r.pos_dist, r.p_dnf];
+    cells.forEach((p, k) => {
+      const w = Math.round(Math.min(1, Math.sqrt(p / 0.4)) * 88);
+      const label = k < N ? `P${k + 1}` : "no finish";
+      h += `<div data-tip="${esc(r.abbr)} ${label}: ${pct(p)}" style="${p > 0.0005 ? `background:color-mix(in srgb,var(--accent) ${w}%,var(--surface));` : ""}${w > 52 ? "color:#fff" : ""}">${p >= 0.1 ? Math.round(p * 100) : ""}</div>`;
+    });
+  }
+  el.innerHTML = h;
+})();
+const base = {}; D.forEach((d) => (base[d.abbr] = d));
+
+/* ---------- set the grid */
+const idxOf = {}; D.forEach((d, i) => (idxOf[d.abbr] = i));
+const expectedOrder = D.map((_, i) => i).sort((a, b) => D[a].exp_pos - D[b].exp_pos);
+let order = expectedOrder.slice();
+let timer = null;
+function renderSlots() {
+  $("slots").innerHTML = order.map((d, s) => `<div class="slot"><span class="n">${s + 1}</span>
+    <select data-slot="${s}" aria-label="Driver in grid slot ${s + 1}">${D.map((x, i) => `<option value="${i}"${i === d ? " selected" : ""}>${esc(x.abbr)}  ${esc(x.name)}</option>`).join("")}</select>
+    <button class="mv" data-up="${s}" aria-label="Move up" ${s === 0 ? "disabled" : ""}>▲</button><button class="mv" data-dn="${s}" aria-label="Move down" ${s === N - 1 ? "disabled" : ""}>▼</button></div>`).join("");
+}
+function swap(a, b) { [order[a], order[b]] = [order[b], order[a]]; }
+$("slots").addEventListener("change", (e) => {
+  const s = +e.target.dataset.slot, d = +e.target.value, old = order.indexOf(d);
+  swap(s, old); renderSlots(); schedule();
+});
+$("slots").addEventListener("click", (e) => {
+  const t = e.target.closest("button"); if (!t) return;
+  if (t.dataset.up) swap(+t.dataset.up, +t.dataset.up - 1); else if (t.dataset.dn) swap(+t.dataset.dn, +t.dataset.dn + 1); else return;
+  renderSlots(); schedule();
+});
+$("g-exp").onclick = () => { order = expectedOrder.slice(); renderSlots(); schedule(); };
+$("g-rev").onclick = () => { order.reverse(); renderSlots(); schedule(); };
+$("g-shuf").onclick = () => { for (let i = N - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); swap(i, j); } renderSlots(); schedule(); };
+function schedule() { clearTimeout(timer); timer = setTimeout(runGrid, 60); }
+function runGrid() {
+  const r = Engine.whatIf(DATA, order, 4000, 11);
+  const rows = D.map((d, i) => ({ ...d, p_win: r.p_win[i], p_podium: r.p_podium[i], p_top10: r.p_top10[i], p_dnf: r.p_dnf[i], exp_pos: r.exp_pos[i], slot: order.indexOf(i) + 1 }));
+  rows.sort((a, b) => b.p_win - a.p_win);
+  const top = rows[0], pole = D[order[0]];
+  const polep = rows.find((x) => x.abbr === pole.abbr).p_win;
+  $("gcall").innerHTML = top.abbr === pole.abbr ? `<b>${esc(top.name)}</b> is the most likely winner at <b>${pct0(top.p_win)}</b> and starts on pole.`
+    : `<b>${esc(top.name)}</b> is the most likely winner at <b>${pct0(top.p_win)}</b>, starting from P${top.slot}. The pole sitter, ${esc(pole.name)}, has <b>${pct0(polep)}</b>.`;
+  oddsTable($("godds"), rows, base);
+  $("godds").querySelectorAll("tbody tr").forEach((tr, i) => { const c = tr.querySelector(".full"); if (c) c.insertAdjacentHTML("afterend", `<span class="hint hide-s">P${rows[i].slot}</span>`); });
+}
+renderSlots(); runGrid();
+
+/* ---------- past races */
+const BT = DATA.backtest; let stage = "post";
+$("race").innerHTML = [...BT].reverse().map((r, i) => `<option value="${BT.length - 1 - i}">${r.season} R${String(r.round).padStart(2, "0")}  ${esc(r.event.replace(" Grand Prix", " GP"))}</option>`).join("");
+function renderPast() {
+  const r = BT[+$("race").value], k = stage === "pre" ? 0 : 1;
+  const rows = r.rows.map((x) => ({ ...x, w: x[stage][0], p: x[stage][1], t: x[stage][2] }));
+  const byWin = [...rows].sort((a, b) => b.w - a.w), winner = rows.find((x) => x.pos === 1);
+  const pick = byWin[0];
+  $("pcall").innerHTML = `Model's top pick: <b>${esc(pick.abbr)}</b> (${pct0(pick.w)}). Actual winner: <b>${winner ? esc(winner.abbr) : "n/a"}</b>, who was given ${winner ? pct0(winner.w) : "–"}.` +
+    (stage === "post" ? ` Pole sitter: ${esc(rows.find((x) => x.grid === 1).abbr)}.` : "");
+  const sorted = [...rows].sort((a, b) => (a.pos ?? 99) - (b.pos ?? 99) || a.grid - b.grid);
+  $("ptable").innerHTML = `<thead><tr><th>Driver</th><th>Start</th><th>Finish</th><th>Win</th><th>Podium</th><th>Points</th></tr></thead><tbody>` +
+    sorted.map((x) => `<tr><td><div class="drv"><span class="stripe" style="background:${tc(x.team.replace("Racing Bulls", "RacingBulls").replace(/^(Alfa Romeo|Kick Sauber|Audi)$/, "Sauber").replace(/^(AlphaTauri|RB)$/, "RacingBulls"))}"></span><span class="abbr">${esc(x.abbr)}</span></div></td>
+      <td>${x.grid}</td><td><span class="pill ${x.pos === 1 ? "p1" : x.pos && x.pos <= 3 ? "pod" : x.pos ? "" : "out"}">${x.pos ?? "DNF"}</span></td>
+      <td>${pct0(x.w)}</td><td>${pct0(x.p)}</td><td>${pct0(x.t)}</td></tr>`).join("") + `</tbody>`;
+}
+$("race").onchange = renderPast;
+$("stage").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; stage = b.dataset.v; [...$("stage").children].forEach((c) => c.setAttribute("aria-pressed", c === b)); renderPast(); });
+renderPast();
+
+/* ---------- trust */
+const S = Object.fromEntries(TRUST.scores.map((s) => [s.key, s]));
+const f3 = (x) => (x == null ? "–" : x.toFixed(3)), f1 = (x) => (x == null ? "–" : x.toFixed(1)), pc = (x) => (x == null ? "–" : Math.round(x * 100) + "%");
+$("verdict").innerHTML = `Short version: the odds are honest, but they are only a little better than simple rules. After qualifying, the model picked the race winner in ${pc(S.post_gbm.winner_picked)} of races, and the plain "who starts where" baseline did ${pc(S.grid_freq.winner_picked)}. Before qualifying it picked the winner in ${pc(S.pre_gbm.winner_picked)}. Where it earns its keep is the points places and the full finishing order.`;
+$("scores").innerHTML = `<thead><tr><th class="l">Method</th><th>Win</th><th>Podium</th><th>Points</th><th>Winner right</th><th>Podium of 3</th><th>Points of 10</th><th>Order match</th></tr></thead><tbody>` +
+  TRUST.scores.map((s) => `<tr><td class="l ${s.key.startsWith("pre_gbm") || s.key === "post_gbm" ? "strong" : ""}">${esc(s.label)}</td><td>${f3(s.brier_win)}</td><td>${f3(s.brier_podium)}</td><td>${f3(s.brier_top10)}</td><td>${pc(s.winner_picked)}</td><td>${f1(s.podium_hits)}</td><td>${f1(s.top10_hits)}</td><td>${f3(s.spearman)}</td></tr>`).join("") + `</tbody>`;
+const verdictTag = (a) => (a[1] < 0 && a[2] < 0 ? `<span class="tag clear">model better</span>` : a[1] > 0 && a[2] > 0 ? `<span class="tag worse">model worse</span>` : `<span class="tag unclear">no clear difference</span>`);
+$("diffs").innerHTML = `<thead><tr><th class="l">Comparison</th><th>Win</th><th>Podium</th><th>Points</th></tr></thead><tbody>` +
+  TRUST.diffs.map((d) => `<tr><td class="l">${esc(d.title)}</td>` + ["brier_win", "brier_podium", "brier_top10"].map((k) => `<td>${verdictTag(d[k])}<div class="hint">${d[k][0] > 0 ? "+" : "−"}${Math.abs(d[k][0]).toFixed(4)}</div></td>`).join("") + `</tr>`).join("") + `</tbody>`;
+function calChart(key, title, max) {
+  const W = 300, H = 280, L = 56, B = 34, T = 14, R = 12, pw = W - L - R, ph = H - T - B;
+  const x = (v) => L + (v / max) * pw, y = (v) => T + ph - (v / max) * ph;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Calibration of ${title}"><text x="${L}" y="10" fill="var(--ink)" font-size="12" font-weight="600">${title}</text>`;
+  const ticks = max > 0.7 ? [0, .25, .5, .75, 1] : [0, .2, .4, .6];
+  ticks.forEach((t) => { s += `<line x1="${L}" x2="${W - R}" y1="${y(t)}" y2="${y(t)}" stroke="var(--line)"/><text x="${L - 6}" y="${y(t) + 4}" text-anchor="end" font-size="10" fill="var(--muted)">${Math.round(t * 100)}%</text><text x="${x(t)}" y="${H - B + 14}" text-anchor="middle" font-size="10" fill="var(--muted)">${Math.round(t * 100)}%</text>`; });
+  s += `<line x1="${x(0)}" y1="${y(0)}" x2="${x(max)}" y2="${y(max)}" stroke="var(--muted)" stroke-dasharray="4 4"/>`;
+  s += `<text x="${L + pw / 2}" y="${H - 4}" text-anchor="middle" font-size="11" fill="var(--muted)">Chance given</text><text transform="translate(11 ${T + ph / 2}) rotate(-90)" text-anchor="middle" font-size="11" fill="var(--muted)">How often it happened</text>`;
+  [["pre_gbm", "var(--accent2)"], ["post_gbm", "var(--accent)"]].forEach(([m, c]) => {
+    const pts = TRUST.calibration[m][key].filter((b) => b[2] >= 15 && b[0] <= max);
+    s += `<polyline fill="none" stroke="${c}" stroke-width="2" points="${pts.map((b) => `${x(b[0])},${y(Math.min(b[1], max))}`).join(" ")}"/>`;
+    pts.forEach((b) => (s += `<circle cx="${x(b[0])}" cy="${y(Math.min(b[1], max))}" r="4.5" fill="${c}" stroke="var(--surface)" stroke-width="2" data-tip="${m === "post_gbm" ? "After" : "Before"} qualifying: said ${pct(b[0])}, happened ${pct(b[1])} (${b[2]} driver-races)"/>`));
+  });
+  return s + `</svg>`;
+}
+$("cal").innerHTML = calChart("won", "Race win", 0.7) + calChart("podium", "Podium", 1) + calChart("top10", "Points (top 10)", 1);
+$("dnfnote").textContent = `Retirements: the model expected ${pct(TRUST.dnf.pred)} of starters not to finish and ${pct(TRUST.dnf.obs)} did not. Bins with fewer than 15 cases are left off. Hover a dot for the numbers.`;
+
+/* ---------- tabs, tooltip */
+const tabs = ["forecast", "grid", "past", "trust"];
+function show(name) {
+  if (!tabs.includes(name)) name = "forecast";
+  tabs.forEach((t) => { $("p-" + t).hidden = t !== name; $("t-" + t).setAttribute("aria-selected", t === name); });
+  try { history.replaceState(null, "", "#" + name); } catch (e) {}
+}
+$("tabs").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) show(b.id.slice(2)); });
+show(location.hash.slice(1));
+const tip = $("tip");
+document.addEventListener("pointermove", (e) => {
+  const t = e.target.closest && e.target.closest("[data-tip]");
+  if (!t) { tip.hidden = true; return; }
+  tip.textContent = t.dataset.tip; tip.hidden = false;
+  tip.style.left = Math.min(e.clientX + 12, innerWidth - tip.offsetWidth - 8) + "px"; tip.style.top = (e.clientY + 14) + "px";
+});
+</script>
+

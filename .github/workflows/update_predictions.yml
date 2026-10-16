@@ -1,0 +1,47 @@
+﻿name: Auto-Update F1 Race Predictions
+
+on:
+  schedule:
+    # Runs every Tuesday at 06:00 UTC (after race weekend & official FIA stewarding confirmation)
+    - cron: '0 6 * * 2'
+  workflow_dispatch: # Allows one-click manual re-run from GitHub Actions tab
+
+permissions:
+  contents: write
+
+jobs:
+  update-predictions:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Execute Automated Pipeline
+        run: |
+          python scripts/auto_update.py
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add outputs/ data/ dashboard/ index.html
+          if git diff --staged --quiet; then
+            echo "No changes detected. Dashboard is already up-to-date."
+          else
+            git commit -m "Auto-update F1 predictions and live dashboard [skip ci]"
+            git push
+          fi

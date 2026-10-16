@@ -1,0 +1,5 @@
+pandas
+numpy
+scipy
+scikit-learn
+fastf1      # only needed to re-download the data (download_results.py)
