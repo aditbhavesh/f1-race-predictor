@@ -6,6 +6,15 @@ Chances of winning, reaching the podium, and scoring points for every driver, co
 
 ---
 
+## ⚠️ Responsible Use & Disclaimer
+
+> **Notice:** This project is developed strictly for **educational, academic research, and Formula 1 enthusiast exploration**. 
+> - **NOT Gambling or Financial Advice:** These predictions are probabilistic mathematical models and are **strictly NOT intended for sports betting, gambling, or commercial wagering**.
+> - **Inherent Randomness:** Formula 1 racing involves stochastic events—including collisions, mechanical failures, unpredictable safety cars, weather shifts, and stewarding penalties—which cannot be predicted with certainty.
+> - **No Affiliation:** This project is open-source and independent. It is not affiliated with, sponsored by, or endorsed by Formula 1, Formula One Licensing B.V., the FIA, or any Formula 1 team.
+
+---
+
 ## Results (64 test races, 2024 to Singapore 2026, refitted before every race)
 
 | Method | Win Brier | Podium Brier | Points Brier | Winner right | Podium of 3 | Points of 10 |
@@ -44,12 +53,9 @@ The repository is built to self-sustain season after season:
    - Runs `scripts/export_dashboard.py` and compiles self-contained `index.html`.
    - Commits and pushes changes back to the repository.
 
-2. **Deploying to GitHub Pages (2 Clicks):**
-   - Push this repository to GitHub: `git push origin main`
-   - In your repo settings, go to **Settings ➔ Pages**.
-   - Under **Build and deployment > Source**, select **Deploy from a branch**.
-   - Branch: **`main`**, Folder: **`/(root)`** ➔ Click **Save**.
-   - Your live dashboard is immediately hosted at `https://<your-username>.github.io/f1-race-predictor/`.
+2. **Deploying to GitHub Pages:**
+   - Live URL: `https://aditbhavesh.github.io/f1-race-predictor/`
+   - Configured to deploy automatically from branch **`main`** root.
 
 ---
 

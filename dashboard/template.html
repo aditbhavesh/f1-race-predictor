@@ -72,6 +72,9 @@ select{font:500 14px var(--body);background:var(--surface);color:var(--ink);bord
 .btn:hover{border-color:var(--accent)}
 .delta{font-size:12px}
 .up{color:var(--good)} .down{color:var(--warn)}
+.disclaimer-banner{display:flex;gap:10px;align-items:flex-start;background:color-mix(in srgb,var(--warn) 9%,var(--surface));border:1px solid color-mix(in srgb,var(--warn) 30%,var(--line));border-left:4px solid var(--warn);border-radius:8px;padding:10px 14px;margin:14px 0 6px;font-size:13px;line-height:1.45}
+.disclaimer-icon{font-size:15px;flex:none;margin-top:1px}
+.disclaimer-banner strong{color:var(--ink);font-weight:600}
 .callout{background:var(--soft);border-radius:8px;padding:12px 14px;margin:0 0 14px}
 .callout b{font-weight:600}
 .pill{display:inline-block;min-width:30px;text-align:center;border-radius:999px;font-weight:600;font-size:12px;padding:2px 8px;background:var(--soft)}
@@ -105,6 +108,12 @@ footer{color:var(--muted);font-size:13px;margin-top:8px;max-width:70ch}
   <h1>Grid Odds</h1>
   <p class="lede">Chances of winning, reaching the podium and scoring points, worked out by replaying each race thousands of times. It was tested on 64 past races it had never seen, and the last tab shows how it did.</p>
   <div class="chips" id="chips"></div>
+  <div class="disclaimer-banner">
+    <span class="disclaimer-icon">&#9888;&#65039;</span>
+    <div>
+      <strong>Notice for Visitors:</strong> This model is built strictly for <strong>educational, research, and Formula 1 enthusiast exploration</strong>. It is <strong>NOT gambling, betting, or financial advice</strong>. Grand Prix outcomes involve collisions, weather, and stochastic safety-car variance; mathematical models carry no guarantees. Please enjoy responsibly as an analytical engineering project.
+    </div>
+  </div>
 </header>
 
 <nav role="tablist" id="tabs">
@@ -189,7 +198,7 @@ footer{color:var(--muted);font-size:13px;margin-top:8px;max-width:70ch}
     </ul></section>
 </div>
 </main>
-<footer>Built from public FastF1 timing data, 2022 to 2026. A learning and portfolio project, not betting advice.</footer>
+<footer><strong>Educational Disclaimer:</strong> Built from public FastF1 timing data (2022&ndash;2026). An independent open-source educational and portfolio project; not affiliated with, sponsored by, or endorsed by Formula 1, Formula One Licensing B.V., the FIA, or any team. Not financial, wagering, or gambling advice.</footer>
 </div>
 <div id="tip" hidden></div>
 
