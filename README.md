@@ -6,12 +6,13 @@ Chances of winning, reaching the podium, and scoring points for every driver, co
 
 ---
 
-## ⚠️ Responsible Use & Disclaimer
+## 🛡️ Responsible Use & Educational Disclaimer
 
-> **Notice:** This project is developed strictly for **educational, academic research, and Formula 1 enthusiast exploration**. 
-> - **NOT Gambling or Financial Advice:** These predictions are probabilistic mathematical models and are **strictly NOT intended for sports betting, gambling, or commercial wagering**.
+> **Notice:** Grid Odds is an independent, non-commercial, open-source educational and portfolio project developed strictly for academic research and Formula 1 enthusiast exploration, built using public FastF1 timing and telemetry data (2022–2026).
+> 
+> - **NOT Gambling or Financial Advice:** These predictions are probabilistic mathematical Monte Carlo simulations and are **strictly NOT intended for sports betting, gambling, or commercial wagering**. Provided "as is" without warranty of accuracy.
 > - **Inherent Randomness:** Formula 1 racing involves stochastic events—including collisions, mechanical failures, unpredictable safety cars, weather shifts, and stewarding penalties—which cannot be predicted with certainty.
-> - **No Affiliation:** This project is open-source and independent. It is not affiliated with, sponsored by, or endorsed by Formula 1, Formula One Licensing B.V., the FIA, or any Formula 1 team.
+> - **No Affiliation & Trademarks:** This project is independent and non-commercial. It is not affiliated with, sponsored by, or endorsed by Formula 1, Formula One Licensing B.V., the FIA, or any Formula 1 team. **FORMULA 1, F1, GRAND PRIX**, and related marks are trademarks of Formula One Licensing B.V. All team and driver names are used purely for nominative identification and informational reference.
 
 ---
 
