@@ -1,5 +1,7 @@
 # Grid Odds: an F1 Race Outcome Predictor
 
+[![CI](https://github.com/aditbhavesh/f1-race-predictor/actions/workflows/ci.yml/badge.svg)](https://github.com/aditbhavesh/f1-race-predictor/actions/workflows/ci.yml)
+
 Chances of winning, reaching the podium, and scoring points for every driver, computed by a model tested exclusively on races it had never seen. An interactive dashboard forecasts the next Grand Prix, lets you set any custom starting grid with real-time Monte Carlo re-calculation in the browser, and explores predictions across 64 past races.
 
 > ⚡ **Automated Pipeline:** This dashboard runs on **GitHub Actions**. Every Tuesday at 06:00 UTC (and on-demand), an automated workflow pulls the official FIA schedule via FastF1, detects the upcoming Grand Prix, refits the monotonic gradient-boosting model, runs 20,000 Monte Carlo simulations, and publishes fresh predictions to GitHub Pages.

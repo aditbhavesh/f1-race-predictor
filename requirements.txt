@@ -3,4 +3,5 @@ numpy
 scipy
 scikit-learn
 matplotlib
+pytest
 fastf1      # only needed to re-download the data (download_results.py)
