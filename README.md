@@ -1,8 +1,8 @@
-﻿# Grid Odds: an F1 Race Outcome Predictor
+# Grid Odds: an F1 Race Outcome Predictor
 
 Chances of winning, reaching the podium, and scoring points for every driver, computed by a model tested exclusively on races it had never seen. An interactive dashboard forecasts the next Grand Prix, lets you set any custom starting grid with real-time Monte Carlo re-calculation in the browser, and explores predictions across 64 past races.
 
-> ⚡ **Automated & Future-Proof:** This dashboard runs continuously on **GitHub Actions**. Every Tuesday at 06:00 UTC (and on-demand), an automated workflow pulls the official FIA schedule via FastF1, detects the upcoming Grand Prix, refits the monotonic gradient-boosting model, runs 20,000 Monte Carlo simulations, and publishes fresh predictions to GitHub Pages completely hands-free.
+> ⚡ **Automated Pipeline:** This dashboard runs on **GitHub Actions**. Every Tuesday at 06:00 UTC (and on-demand), an automated workflow pulls the official FIA schedule via FastF1, detects the upcoming Grand Prix, refits the monotonic gradient-boosting model, runs 20,000 Monte Carlo simulations, and publishes fresh predictions to GitHub Pages.
 
 ---
 
@@ -28,9 +28,9 @@ Chances of winning, reaching the podium, and scoring points for every driver, co
 *Brier score is the mean squared error of probabilistic odds (lower is better).*
 
 ### Key Takeaways
-- **Probabilities are well-calibrated:** When the model outputs a 50% podium probability, that outcome occurs approximately 50% of the time in out-of-sample testing.
-- **Rigor & Realism:** The model after qualifying outperforms the naive "starting slot" baseline on points-place distribution while maintaining parity on race winners.
-- **Interactive In-Browser Simulation:** `dashboard/engine.js` runs identical Monte Carlo simulations directly on client devices, allowing instant What-If analysis when altering starting grid slots.
+- **Grid Baseline Comparison:** The post-qualifying model roughly ties the naive "starting slot" baseline on top-10 points finishers (7.9 of 10 points finishers correctly identified vs 7.9 for the baseline). It is slightly behind the starting slot baseline on race winner accuracy (58% vs 61%) and on win/podium Brier scores (Win Brier: 0.032 vs 0.030; Podium Brier: 0.069 vs 0.064), but improves upon it on points-scoring probability resolution (Points Brier: 0.146 vs 0.155).
+- **Added Value Beyond Static Slots:** While starting grid position heavily drives modern Formula 1 outcomes, the model adds capabilities that static historical slot frequencies cannot provide: continuous calibrated probabilities, explicit driver- and team-level retirement (DNF) risk modeling, sensitivity to practice/qualifying pace gaps and grid penalties, and full field-level probability distributions.
+- **Interactive In-Browser Simulation:** `dashboard/engine.js` runs Monte Carlo simulations directly on client devices, allowing instant What-If analysis when altering starting grid slots.
 
 ---
 
@@ -45,7 +45,7 @@ Chances of winning, reaching the podium, and scoring points for every driver, co
 
 ## Live Automation & GitHub Pages Hosting
 
-The repository is built to self-sustain season after season:
+The repository includes automated update workflows:
 
 1. **Automated Cron Pipeline (`.github/workflows/update_predictions.yml`):**
    - Runs automatically every Tuesday after race weekend.
