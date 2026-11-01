@@ -36,6 +36,20 @@ else:
 nxt["race_idx"] = c.race_idx.max() + 1
 print(f"Generating predictions for next event: {nxt['EventName'].iat[0]} (Round {nxt['Round'].iat[0]}, {nxt['Season'].iat[0]})")
 
+# Check if Qualifying results are confirmed for upcoming race
+confirmed_grid = None
+try:
+    import fastf1
+    q_s = fastf1.get_session(int(nxt["Season"].iat[0]), int(nxt["Round"].iat[0]), "Q")
+    q_s.load(laps=False, telemetry=False, weather=False, messages=False)
+    if q_s.results is not None and not q_s.results.empty and "Position" in q_s.results.columns:
+        valid_pos = q_s.results.dropna(subset=["Position"]).sort_values("Position")
+        if len(valid_pos) > 0:
+            confirmed_grid = valid_pos["Abbreviation"].tolist()
+            print(f"Confirmed qualifying grid detected ({len(confirmed_grid)} drivers).")
+except Exception:
+    pass
+
 f_all = build_features(pd.concat([c, nxt], ignore_index=True))
 train = f_all[f_all.race_idx <= c.race_idx.max()]
 up = f_all[f_all.race_idx == nxt.race_idx.iat[0]].reset_index(drop=True)
@@ -166,7 +180,8 @@ out = {
         "place": next_ev.get("place", "Circuit"),
         "date": next_ev.get("date", str(pd.Timestamp.now())[:10]),
         "season": int(next_ev["season"]),
-        "round": int(next_ev["round"])
+        "round": int(next_ev["round"]),
+        "confirmed_grid": confirmed_grid
     },
     "trained_through": {
         "race": last.EventName.iat[0],
@@ -180,6 +195,11 @@ out = {
     "slot_dnf": np.round(slot_dnf, 5).tolist(),
     "edges": edges,
     "pools": pools,
+    "circuit_dna": {
+        "overtake_difficulty": round(float(up["circuit_overtake_diff"].iat[0]), 3) if "circuit_overtake_diff" in up.columns and pd.notna(up["circuit_overtake_diff"].iat[0]) else 0.5,
+        "sc_likelihood": round(float(up["circuit_sc_likelihood"].iat[0]), 3) if "circuit_sc_likelihood" in up.columns and pd.notna(up["circuit_sc_likelihood"].iat[0]) else 0.15
+    },
+    "h2h": np.round(sim["h2h"], 3).tolist() if "h2h" in sim else [],
     "backtest": races
 }
 

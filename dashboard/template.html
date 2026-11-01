@@ -261,6 +261,7 @@ footer{color:var(--muted);font-size:13px;margin-top:8px;max-width:70ch}
 <nav role="tablist" id="tabs">
   <button role="tab" id="t-forecast" aria-selected="true" aria-controls="p-forecast">Forecast</button>
   <button role="tab" id="t-grid" aria-selected="false" aria-controls="p-grid">Set the grid</button>
+  <button role="tab" id="t-h2h" aria-selected="false" aria-controls="p-h2h">Head-to-head</button>
   <button role="tab" id="t-past" aria-selected="false" aria-controls="p-past">Past races</button>
   <button role="tab" id="t-trust" aria-selected="false" aria-controls="p-trust">How far to trust it</button>
 </nav>
@@ -295,6 +296,28 @@ footer{color:var(--muted);font-size:13px;margin-top:8px;max-width:70ch}
       <p class="hint" style="margin:10px 0 0">Assumes no grid penalties, and that each driver's Q1 lap gap to the fastest car is typical for his starting slot. Change is measured against the forecast before qualifying.</p>
     </section>
   </div>
+</div>
+
+<div id="p-h2h" role="tabpanel" aria-labelledby="t-h2h" hidden>
+  <h2>Head-to-head driver matchups</h2>
+  <p class="sub">Pairwise probability of finishing ahead across 20,000 Monte Carlo race simulations. Select any two drivers or inspect intra-team battles below.</p>
+  
+  <section class="card">
+    <h3>Custom Driver Matchup</h3>
+    <div class="controls" style="margin-bottom:16px">
+      <div><label for="h2h-a">Driver A</label><select id="h2h-a"></select></div>
+      <div style="display:flex;align-items:flex-end;padding-bottom:8px;font-weight:700;color:var(--muted)">VS</div>
+      <div><label for="h2h-b">Driver B</label><select id="h2h-b"></select></div>
+    </div>
+    <div id="h2h-duel" class="callout" style="font-size:15px;line-height:1.6"></div>
+    <div class="scroll" style="margin-top:12px"><table id="h2h-table"></table></div>
+  </section>
+
+  <section class="card">
+    <h3>Teammate Duels</h3>
+    <p class="sub">Who finishes ahead in identical machinery? Intra-team head-to-head win probability.</p>
+    <div class="scroll"><table id="teammate-table"></table></div>
+  </section>
 </div>
 
 <div id="p-past" role="tabpanel" aria-labelledby="t-past" hidden>
@@ -371,11 +394,18 @@ const barCell = (p, max) => `<div class="barcell"><span class="barwrap"><span cl
   const dateStr = raceDate ? raceDate.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) : (DATA.next_race.date || "");
   const updatedStr = DATA.last_updated || "Live";
 
+  const cdna = DATA.circuit_dna;
+  const cdnaChip = cdna ? `<span class="chip"><b>Circuit DNA</b> Overtake Diff: <b>${Math.round(cdna.overtake_difficulty * 100)}%</b> &bull; SC Risk: <b>${Math.round(cdna.sc_likelihood * 100)}%</b></span>` : "";
+  const confGrid = DATA.next_race && DATA.next_race.confirmed_grid;
+  const gridChip = confGrid && confGrid.length ? `<span class="chip" style="color:var(--accent);border-color:color-mix(in srgb,var(--accent) 50%,var(--line))"><b>Grid Confirmed</b> Starting order loaded</span>` : "";
+
   $("chips").innerHTML = `<span class="chip"><b>Next race</b> ${esc(DATA.next_race.name)} (${esc(DATA.next_race.place || "")}) &bull; ${esc(dateStr)}${countdown}</span>
     <span class="chip"><b>Trained on</b> ${DATA.trained_through.n_races} races (up to ${esc(DATA.trained_through.race)})</span>
+    ${cdnaChip}
+    ${gridChip}
     <span class="chip" style="color:var(--good);border-color:color-mix(in srgb,var(--good) 40%,var(--line))"><span class="pulse-dot"></span><b>Live Pipeline</b> Auto-synced weekly (${esc(updatedStr)})</span>`;
 
-$("fsub").textContent = `The forecast for the ${DATA.next_race.name} before anyone has qualified. It uses each team's form this season and each driver's record against his own teammate.`;
+$("fsub").textContent = `The forecast for the ${DATA.next_race.name} before qualifying. It integrates team form, teammate skill deltas, and Circuit DNA (overtaking difficulty: ${cdna ? Math.round(cdna.overtake_difficulty * 100) + "%" : "moderate"}, safety car risk: ${cdna ? Math.round(cdna.sc_likelihood * 100) + "%" : "typical"}).`;
 
 /* ---------- forecast */
 function oddsTable(el, rows, base) {
@@ -409,7 +439,10 @@ const base = {}; D.forEach((d) => (base[d.abbr] = d));
 
 /* ---------- set the grid */
 const idxOf = {}; D.forEach((d, i) => (idxOf[d.abbr] = i));
-const expectedOrder = D.map((_, i) => i).sort((a, b) => D[a].exp_pos - D[b].exp_pos);
+const confirmedGrid = DATA.next_race && DATA.next_race.confirmed_grid;
+const expectedOrder = (confirmedGrid && confirmedGrid.length)
+  ? confirmedGrid.map((abbr) => idxOf[abbr]).filter((x) => x != null)
+  : D.map((_, i) => i).sort((a, b) => D[a].exp_pos - D[b].exp_pos);
 let order = expectedOrder.slice();
 let timer = null;
 function renderSlots() {
@@ -443,6 +476,104 @@ function runGrid() {
   $("godds").querySelectorAll("tbody tr").forEach((tr, i) => { const c = tr.querySelector(".full"); if (c) c.insertAdjacentHTML("afterend", `<span class="hint hide-s">P${rows[i].slot}</span>`); });
 }
 renderSlots(); runGrid();
+
+/* ---------- head to head */
+const H2H = DATA.h2h || [];
+function setupH2H() {
+  const selA = $("h2h-a"), selB = $("h2h-b");
+  if (!selA || !selB) return;
+  selA.innerHTML = D.map((d, i) => `<option value="${i}"${d.abbr === "NOR" ? " selected" : ""}>${esc(d.abbr)}  ${esc(d.name)} (${esc(d.team)})</option>`).join("");
+  selB.innerHTML = D.map((d, i) => `<option value="${i}"${d.abbr === "PIA" ? " selected" : ""}>${esc(d.abbr)}  ${esc(d.name)} (${esc(d.team)})</option>`).join("");
+
+  function renderDuel() {
+    const i = +selA.value, j = +selB.value;
+    const a = D[i], b = D[j];
+    if (i === j) {
+      $("h2h-duel").innerHTML = `<span style="color:var(--muted)">Select two different drivers to compare.</span>`;
+      $("h2h-table").innerHTML = "";
+      return;
+    }
+    const pA = H2H.length > i && H2H[i].length > j ? H2H[i][j] : (a.p_win / (a.p_win + b.p_win || 1));
+    const pB = 1.0 - pA;
+    const pctA = Math.round(pA * 100), pctB = Math.round(pB * 100);
+    const favorite = pA >= 0.5 ? a : b;
+    const favPct = Math.max(pctA, pctB);
+
+    $("h2h-duel").innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="stripe" style="background:${tc(a.team)};height:20px;width:6px;border-radius:2px"></span>
+          <b>${esc(a.name)}</b> <span style="font-size:18px;font-weight:700;color:var(--accent)">${pctA}%</span>
+        </div>
+        <div style="font-size:13px;color:var(--muted);font-weight:600">P(Finish Ahead)</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:18px;font-weight:700;color:var(--accent2)">${pctB}%</span>
+          <b>${esc(b.name)}</b>
+          <span class="stripe" style="background:${tc(b.team)};height:20px;width:6px;border-radius:2px"></span>
+        </div>
+      </div>
+      <div style="display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--line);margin-bottom:12px">
+        <div style="width:${pctA}%;background:${tc(a.team)}"></div>
+        <div style="width:${pctB}%;background:${tc(b.team)}"></div>
+      </div>
+      <div style="color:var(--muted);font-size:13px">
+        Across 20,000 simulations, <b>${esc(favorite.abbr)}</b> finishes ahead in <b>${favPct}%</b> of outcomes.
+      </div>
+    `;
+
+    $("h2h-table").innerHTML = `
+      <thead><tr><th>Metric</th><th>${esc(a.abbr)} (${esc(a.team)})</th><th>${esc(b.abbr)} (${esc(b.team)})</th></tr></thead>
+      <tbody>
+        <tr><td>Race Win Probability</td><td><b>${pct0(a.p_win)}</b></td><td><b>${pct0(b.p_win)}</b></td></tr>
+        <tr><td>Podium Probability</td><td><b>${pct0(a.p_podium)}</b></td><td><b>${pct0(b.p_podium)}</b></td></tr>
+        <tr><td>Top 10 Points Probability</td><td><b>${pct0(a.p_top10)}</b></td><td><b>${pct0(b.p_top10)}</b></td></tr>
+        <tr><td>Expected Finish Position</td><td>P${a.exp_pos ? a.exp_pos.toFixed(1) : "–"}</td><td>P${b.exp_pos ? b.exp_pos.toFixed(1) : "–"}</td></tr>
+        <tr><td>Retirement / DNF Risk</td><td>${pct0(a.p_dnf)}</td><td>${pct0(b.p_dnf)}</td></tr>
+      </tbody>
+    `;
+  }
+
+  selA.onchange = renderDuel;
+  selB.onchange = renderDuel;
+  renderDuel();
+
+  const byTeam = {};
+  D.forEach((d, idx) => {
+    byTeam[d.team] = byTeam[d.team] || [];
+    byTeam[d.team].push({ ...d, idx });
+  });
+
+  const tmRows = [];
+  Object.keys(byTeam).sort().forEach((teamName) => {
+    const pair = byTeam[teamName];
+    if (pair.length >= 2) {
+      const d1 = pair[0], d2 = pair[1];
+      const p1 = H2H.length > d1.idx ? H2H[d1.idx][d2.idx] : 0.5;
+      const p2 = 1.0 - p1;
+      const pct1 = Math.round(p1 * 100), pct2 = Math.round(p2 * 100);
+      tmRows.push(`
+        <tr>
+          <td><div class="drv"><span class="stripe" style="background:${tc(teamName)}"></span><b>${esc(teamName)}</b></div></td>
+          <td><b>${esc(d1.abbr)}</b> (${pct1}%)</td>
+          <td style="min-width:140px">
+            <div style="display:flex;height:8px;border-radius:4px;overflow:hidden;background:var(--line)">
+              <div style="width:${pct1}%;background:${p1 >= p2 ? tc(teamName) : "var(--muted)"}"></div>
+              <div style="width:${pct2}%;background:${p2 > p1 ? tc(teamName) : "var(--muted)"}"></div>
+            </div>
+          </td>
+          <td><b>${esc(d2.abbr)}</b> (${pct2}%)</td>
+          <td><span class="tag ${p1 >= p2 ? "clear" : "worse"}">${p1 >= p2 ? esc(d1.abbr) : esc(d2.abbr)} +${Math.abs(pct1 - pct2)}%</span></td>
+        </tr>
+      `);
+    }
+  });
+
+  $("teammate-table").innerHTML = `
+    <thead><tr><th>Team</th><th>Driver 1</th><th style="min-width:140px">H2H Split</th><th>Driver 2</th><th>Predicted Edge</th></tr></thead>
+    <tbody>${tmRows.join("")}</tbody>
+  `;
+}
+setupH2H();
 
 /* ---------- past races */
 const BT = DATA.backtest; let stage = "post";
@@ -496,7 +627,7 @@ $("cal").innerHTML = calChart("won", "Race win", 0.7) + calChart("podium", "Podi
 $("dnfnote").textContent = `Retirements: the model expected ${pct(TRUST.dnf.pred)} of starters not to finish and ${pct(TRUST.dnf.obs)} did not. Bins with fewer than 15 cases are left off. Hover a dot for the numbers.`;
 
 /* ---------- tabs, tooltip */
-const tabs = ["forecast", "grid", "past", "trust"];
+const tabs = ["forecast", "grid", "h2h", "past", "trust"];
 function show(name) {
   if (!tabs.includes(name)) name = "forecast";
   tabs.forEach((t) => { $("p-" + t).hidden = t !== name; $("t-" + t).setAttribute("aria-selected", t === name); });

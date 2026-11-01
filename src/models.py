@@ -129,6 +129,17 @@ def simulate(score, p_dnf, edges, pools, n_sims=4000, seed=0):
         pos_counts[:, k - 1] = (rank == k).mean(axis=0)
     fin = rank > 0
     exp_pos = np.where(fin.sum(0) > 0, (rank * fin).sum(0) / np.maximum(fin.sum(0), 1), np.nan)
+
+    h2h = np.zeros((n, n))
+    for i in range(n):
+        for j in range(i + 1, n):
+            win_i = (fin[:, i] & fin[:, j] & (rank[:, i] < rank[:, j])) | (fin[:, i] & ~fin[:, j])
+            both_out = ~fin[:, i] & ~fin[:, j]
+            p_i = float(win_i.mean() + 0.5 * both_out.mean())
+            h2h[i, j] = p_i
+            h2h[j, i] = 1.0 - p_i
+        h2h[i, i] = 0.5
+
     return {"p_win": (rank == 1).mean(0), "p_podium": ((rank >= 1) & (rank <= 3)).mean(0),
             "p_top10": ((rank >= 1) & (rank <= 10)).mean(0), "p_dnf": out.mean(0),
-            "exp_pos": exp_pos, "pos_counts": pos_counts}
+            "exp_pos": exp_pos, "pos_counts": pos_counts, "h2h": h2h}

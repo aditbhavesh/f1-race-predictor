@@ -1,8 +1,10 @@
-﻿name: Auto-Update F1 Race Predictions
+name: Auto-Update F1 Race Predictions
 
 on:
   schedule:
-    # Runs every Tuesday at 06:00 UTC (after race weekend & official FIA stewarding confirmation)
+    # 1. Saturday 21:00 UTC: Post-qualifying update with confirmed starting grid for Sunday race
+    - cron: '0 21 * * 6'
+    # 2. Tuesday 06:00 UTC: Post-race update after weekend results & official FIA confirmation
     - cron: '0 6 * * 2'
   workflow_dispatch: # Allows one-click manual re-run from GitHub Actions tab
 

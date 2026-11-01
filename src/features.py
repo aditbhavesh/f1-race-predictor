@@ -24,12 +24,14 @@ from collections import defaultdict
 import numpy as np
 import pandas as pd
 
+from circuit_features import add_circuit_features
 from data import REGULATION_RESET_SEASONS
 
 PRE = ["team_q_ew3", "team_r_ew3", "team_q_prev", "team_r_prev", "n_prior_season",
-       "drv_q_ew", "drv_r_ew", "drv_q_skill", "drv_r_skill", "drv_n_prior"]
+       "drv_q_ew", "drv_r_ew", "drv_q_skill", "drv_r_skill", "drv_n_prior",
+       "circuit_overtake_diff", "circuit_sc_likelihood"]
 POST = PRE + ["grid_pct", "grid_pen", "q1_gap"]
-DNF_PRE = ["drv_dnf_rate", "team_dnf_rate", "field_dnf_ew"]
+DNF_PRE = ["drv_dnf_rate", "team_dnf_rate", "field_dnf_ew", "circuit_sc_likelihood"]
 DNF_POST = DNF_PRE + ["grid_pct"]
 ALL_FEATURES = list(dict.fromkeys(POST + DNF_POST))
 
@@ -54,9 +56,11 @@ def _nanmean(a):
 
 
 def build_features(c: pd.DataFrame, reset_seasons=REGULATION_RESET_SEASONS, carry_prev: bool = True) -> pd.DataFrame:
-    out = c.copy()
+    c_circ = add_circuit_features(c)
+    out = c_circ.copy()
     for col in ALL_FEATURES:
-        out[col] = np.nan
+        if col not in ("circuit_overtake_diff", "circuit_sc_likelihood"):
+            out[col] = np.nan
 
     team_hist = defaultdict(list)      # entry  -> [(season, team_q, team_r, dnf_rate_of_its_cars, n_cars)]
     drv_hist = defaultdict(list)       # driver -> [(season, q_pct, r_pct, q_delta, r_delta, dnf)]
