@@ -13,6 +13,7 @@
   }
   // number of edges strictly below v: same as numpy.searchsorted(edges, v) (side = left)
   function band(edges, v) {
+    if (v == null || isNaN(v)) return 0;
     let lo = 0, hi = edges.length;
     while (lo < hi) { const m = (lo + hi) >> 1; if (edges[m] < v) lo = m + 1; else hi = m; }
     return lo;
@@ -28,7 +29,8 @@
       let m = 0;
       for (let i = 0; i < n; i++) {
         if (rnd() < pDnf[i]) { dnf[i]++; continue; }
-        const pool = pools[bands[i]];
+        const b = (bands[i] != null && bands[i] >= 0 && bands[i] < pools.length) ? bands[i] : 0;
+        const pool = pools[b] || pools[0];
         val[i] = score[i] + pool[Math.floor(rnd() * pool.length)];
         idx[m++] = i;
       }
@@ -50,10 +52,18 @@
   }
   // order[slot] = driver index. slot_score[driver][slot], slot_dnf[driver][slot] come from the model.
   function whatIf(data, order, nSims, seed) {
-    const n = order.length, score = new Array(n), pd = new Array(n);
+    const n = (data.drivers && data.drivers.length) || (data.slot_score && data.slot_score.length) || order.length;
+    const score = new Array(n), pd = new Array(n);
     for (let slot = 0; slot < n; slot++) {
       const d = order[slot];
-      score[d] = data.slot_score[d][slot]; pd[d] = data.slot_dnf[d][slot];
+      if (d != null && d >= 0 && d < n && data.slot_score && data.slot_score[d]) {
+        score[d] = data.slot_score[d][slot] != null ? data.slot_score[d][slot] : 0.5;
+        pd[d] = (data.slot_dnf && data.slot_dnf[d] && data.slot_dnf[d][slot] != null) ? data.slot_dnf[d][slot] : 0.12;
+      }
+    }
+    for (let i = 0; i < n; i++) {
+      if (score[i] === undefined || isNaN(score[i])) score[i] = 0.5;
+      if (pd[i] === undefined || isNaN(pd[i])) pd[i] = 0.12;
     }
     return simulate(score, pd, data.edges, data.pools, nSims, seed);
   }

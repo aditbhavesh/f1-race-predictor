@@ -36,6 +36,11 @@ else:
 nxt["race_idx"] = c.race_idx.max() + 1
 print(f"Generating predictions for next event: {nxt['EventName'].iat[0]} (Round {nxt['Round'].iat[0]}, {nxt['Season'].iat[0]})")
 
+f_all = build_features(pd.concat([c, nxt], ignore_index=True))
+train = f_all[f_all.race_idx <= c.race_idx.max()]
+up = f_all[f_all.race_idx == nxt.race_idx.iat[0]].reset_index(drop=True)
+n = len(up)
+
 # Check if Qualifying results are confirmed for upcoming race
 confirmed_grid = None
 try:
@@ -44,16 +49,16 @@ try:
     q_s.load(laps=False, telemetry=False, weather=False, messages=False)
     if q_s.results is not None and not q_s.results.empty and "Position" in q_s.results.columns:
         valid_pos = q_s.results.dropna(subset=["Position"]).sort_values("Position")
-        if len(valid_pos) > 0:
-            confirmed_grid = valid_pos["Abbreviation"].tolist()
+        known_abbrs = set(up["Abbreviation"])
+        filtered = [str(x) for x in valid_pos["Abbreviation"] if pd.notna(x) and str(x) != "nan" and str(x) in known_abbrs]
+        if len(filtered) >= 10:
+            for x in up["Abbreviation"]:
+                if x not in filtered:
+                    filtered.append(x)
+            confirmed_grid = filtered
             print(f"Confirmed qualifying grid detected ({len(confirmed_grid)} drivers).")
 except Exception:
     pass
-
-f_all = build_features(pd.concat([c, nxt], ignore_index=True))
-train = f_all[f_all.race_idx <= c.race_idx.max()]
-up = f_all[f_all.race_idx == nxt.race_idx.iat[0]].reset_index(drop=True)
-n = len(up)
 
 # ---------- before qualifying
 print("Fitting pre-qualifying model & running 20,000 Monte Carlo sims...")
