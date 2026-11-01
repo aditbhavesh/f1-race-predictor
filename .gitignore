@@ -1,8 +1,31 @@
+# Environments
 .venv/
+venv/
+env/
+
+# Python & Test Caches
 __pycache__/
-*.pkl
-*.log
-outputs/shots/
-.fastf1-cache/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+
+# FastF1 & General Caches
 cache/
+.cache/
+.fastf1-cache/
+fastf1_cache/
+
+# Environment Variables & Secrets
 .env
+.env.*
+
+# Logs & Temporary Files
+*.log
+*.pkl
+outputs/shots/
+
+# OS Artifacts
+.DS_Store
+Thumbs.db
