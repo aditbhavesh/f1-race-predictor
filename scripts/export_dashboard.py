@@ -1,4 +1,4 @@
-﻿"""Freeze the forecast for the next race and export everything the dashboard needs as one JSON file.
+"""Freeze the forecast for the next race and export everything the dashboard needs as one JSON file.
 Dynamically detects the next upcoming race on the F1 calendar and fits on all races to date."""
 import sys, json, pickle
 from pathlib import Path
@@ -103,9 +103,62 @@ elif dashboard_json_path.exists():
     try:
         prev_data = json.load(open(dashboard_json_path))
         races = prev_data.get("backtest", [])
-        print(f"Preserving existing historical backtest ({len(races)} races).")
+        print(f"Loaded existing historical backtest ({len(races)} races).")
     except Exception:
         races = []
+
+# Incrementally evaluate any completed races in train (from 2024 onward) missing from backtest
+existing_race_ids = {r["id"] for r in races}
+missing_races = train[(train.Season >= 2024) & (~train.race_id.isin(existing_race_ids))]
+if not missing_races.empty:
+    for rid, g in missing_races.groupby("race_idx", sort=True):
+        ev_name = g.EventName.iat[0]
+        ev_season = int(g.Season.iat[0])
+        ev_round = int(g.Round.iat[0])
+        ev_id = g.race_id.iat[0]
+        print(f"Evaluating backtest for newly completed race: {ev_name} ({ev_season} R{ev_round:02d})...")
+
+        past_data = train[train.race_idx < rid]
+        m_pre = RaceModel("pre", "gbm").fit(past_data)
+        sc_pre, p_pre = m_pre.predict(g)
+        sim_pre = m_pre.simulate(sc_pre, p_pre, 3000, 1000 + rid)
+
+        m_post = RaceModel("post", "gbm").fit(past_data)
+        sc_post, p_post = m_post.predict(g)
+        sim_post = m_post.simulate(sc_post, p_post, 3000, 1000 + rid)
+
+        pre_map = {abbr: [round(float(sim_pre["p_win"][i]), 4),
+                          round(float(sim_pre["p_podium"][i]), 4),
+                          round(float(sim_pre["p_top10"][i]), 4)]
+                   for i, abbr in enumerate(g["Abbreviation"])}
+
+        post_map = {abbr: [round(float(sim_post["p_win"][i]), 4),
+                           round(float(sim_post["p_podium"][i]), 4),
+                           round(float(sim_post["p_top10"][i]), 4),
+                           round(float(sim_post["p_dnf"][i]), 4)]
+                    for i, abbr in enumerate(g["Abbreviation"])}
+
+        rows = []
+        for _, r in g.sort_values("grid").iterrows():
+            abbr = r.Abbreviation
+            rows.append({
+                "abbr": abbr,
+                "team": r.TeamName,
+                "grid": int(r.grid),
+                "pos": None if not r.finished else int(r.pos),
+                "pre": pre_map[abbr],
+                "post": post_map[abbr]
+            })
+
+        races.append({
+            "id": ev_id,
+            "season": ev_season,
+            "round": ev_round,
+            "event": ev_name,
+            "rows": rows
+        })
+    races.sort(key=lambda x: (x["season"], x["round"]))
+    print(f"Backtest successfully updated to {len(races)} total completed races.")
 
 out = {
     "next_race": {

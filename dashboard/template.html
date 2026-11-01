@@ -299,7 +299,7 @@ footer{color:var(--muted);font-size:13px;margin-top:8px;max-width:70ch}
 
 <div id="p-past" role="tabpanel" aria-labelledby="t-past" hidden>
   <h2>Past races</h2>
-  <p class="sub">Every race from 2024 to Singapore 2026, predicted using only the races before it.</p>
+  <p class="sub" id="past-sub">Every race from 2024 to Singapore 2026, predicted using only the races before it.</p>
   <section class="card">
     <div class="controls">
       <div><label for="race">Race</label><select id="race"></select></div>
@@ -447,6 +447,10 @@ renderSlots(); runGrid();
 /* ---------- past races */
 const BT = DATA.backtest; let stage = "post";
 $("race").innerHTML = [...BT].reverse().map((r, i) => `<option value="${BT.length - 1 - i}">${r.season} R${String(r.round).padStart(2, "0")}  ${esc(r.event.replace(" Grand Prix", " GP"))}</option>`).join("");
+const lastRace = BT[BT.length - 1];
+if (lastRace && $("past-sub")) {
+  $("past-sub").textContent = `Every race from 2024 to ${esc(lastRace.event.replace(" Grand Prix", ""))} ${lastRace.season}, predicted using only the races before it.`;
+}
 function renderPast() {
   const r = BT[+$("race").value], k = stage === "pre" ? 0 : 1;
   const rows = r.rows.map((x) => ({ ...x, w: x[stage][0], p: x[stage][1], t: x[stage][2] }));
