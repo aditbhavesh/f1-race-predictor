@@ -6,6 +6,10 @@ Chances of winning, reaching the podium, and scoring points for every driver, co
 
 > ⚡ **Automated Pipeline:** This dashboard runs on **GitHub Actions**. Every Tuesday at 06:00 UTC (and on-demand), an automated workflow pulls the official FIA schedule via FastF1, detects the upcoming Grand Prix, refits the monotonic gradient-boosting model, runs 20,000 Monte Carlo simulations, and publishes fresh predictions to GitHub Pages.
 
+[![Grid Odds Interactive Dashboard](docs/screenshots/dashboard.png)](https://aditbhavesh.github.io/f1-race-predictor/)
+
+*Interactive Monte Carlo Dashboard running live at [aditbhavesh.github.io/f1-race-predictor](https://aditbhavesh.github.io/f1-race-predictor/)*
+
 ---
 
 ## 🛡️ Responsible Use & Educational Disclaimer
