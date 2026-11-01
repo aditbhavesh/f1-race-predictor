@@ -29,8 +29,19 @@ Chances of winning, reaching the podium, and scoring points for every driver, co
 
 ### Key Takeaways
 - **Grid Baseline Comparison:** The post-qualifying model roughly ties the naive "starting slot" baseline on top-10 points finishers (7.9 of 10 points finishers correctly identified vs 7.9 for the baseline). It is slightly behind the starting slot baseline on race winner accuracy (58% vs 61%) and on win/podium Brier scores (Win Brier: 0.032 vs 0.030; Podium Brier: 0.069 vs 0.064), but improves upon it on points-scoring probability resolution (Points Brier: 0.146 vs 0.155).
+- **Calibrated Probabilities & Empirical Limits:** Overall probability calibration is high, with Expected Calibration Error (ECE) of 0.54% for podiums, 1.51% for points finishes, and 0.93% for race wins across 1,312 driver-races. As shown in the reliability diagram below, podium probabilities are near-perfectly calibrated across all probability levels, while win odds show slight overconfidence in the 10%–20% range and underconfidence for heavy favorites in the 40%–70% range.
 - **Added Value Beyond Static Slots:** While starting grid position heavily drives modern Formula 1 outcomes, the model adds capabilities that static historical slot frequencies cannot provide: continuous calibrated probabilities, explicit driver- and team-level retirement (DNF) risk modeling, sensitivity to practice/qualifying pace gaps and grid penalties, and full field-level probability distributions.
 - **Interactive In-Browser Simulation:** `dashboard/engine.js` runs Monte Carlo simulations directly on client devices, allowing instant What-If analysis when altering starting grid slots.
+
+### Calibration & Reliability
+
+![Calibration Reliability Diagram](outputs/figures/calibration.png)
+
+*Reliability diagram of out-of-sample walk-forward predictions across all 64 test races (1,312 driver-races, 2024 to 2026), evaluated across empirical probability bins with observed bin counts ($n$):*
+
+- **Podium Probability (ECE = 0.54%):** Near-ideal calibration across the entire curve (e.g. 53.4% predicted vs 54.3% observed, $n=173$; 77.4% predicted vs 78.6% observed, $n=56$).
+- **Points Probability (ECE = 1.51%):** Strongly calibrated across all deciles, with minor overestimation in the low-probability midfield window (5%–15% predicted vs 5%–12% observed).
+- **Win Probability (ECE = 0.93%):** Sharp discrimination for non-contenders ($P < 2\%$, observed 0.1%, $n=959$). The model exhibits moderate overconfidence in the intermediate 10%–20% range (predicted 14.5% vs observed 9.3%) and underconfidence for dominant polesitters in the 40%–70% range (predicted 52.7% vs observed 62.9%).
 
 ---
 

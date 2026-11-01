@@ -6,6 +6,7 @@ steps = ["scripts/quick.py",          # cleaning + leak-free features
          "tests/test_features.py data/results_2022_2026.csv",
          "scripts/final_test.py",     # walk-forward test, 2024 onward
          "scripts/export_dashboard.py", "scripts/export_trust.py",
+         "scripts/make_calibration_plot.py", # reliability diagram & ECE
          "tests/crosscheck.py",       # browser simulation vs Python
          "dashboard/build.py"]
 for s in steps:
